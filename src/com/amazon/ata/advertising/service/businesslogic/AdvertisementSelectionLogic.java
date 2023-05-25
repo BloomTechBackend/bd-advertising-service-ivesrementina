@@ -1,17 +1,18 @@
 package com.amazon.ata.advertising.service.businesslogic;
 
 import com.amazon.ata.advertising.service.dao.ReadableDao;
-import com.amazon.ata.advertising.service.model.AdvertisementContent;
-import com.amazon.ata.advertising.service.model.EmptyGeneratedAdvertisement;
-import com.amazon.ata.advertising.service.model.GeneratedAdvertisement;
+import com.amazon.ata.advertising.service.model.*;
+import com.amazon.ata.advertising.service.targeting.TargetingEvaluator;
 import com.amazon.ata.advertising.service.targeting.TargetingGroup;
 
+import com.amazon.ata.advertising.service.targeting.predicate.TargetingPredicateResult;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 /**
@@ -56,19 +57,41 @@ public class AdvertisementSelectionLogic {
      *     not be generated.
      */
     public GeneratedAdvertisement selectAdvertisement(String customerId, String marketplaceId) {
-        GeneratedAdvertisement generatedAdvertisement = new EmptyGeneratedAdvertisement();
-        if (StringUtils.isEmpty(marketplaceId)) {
-            LOG.warn("MarketplaceId cannot be null or empty. Returning empty ad.");
-        } else {
-            final List<AdvertisementContent> contents = contentDao.get(marketplaceId);
 
-            if (CollectionUtils.isNotEmpty(contents)) {
-                AdvertisementContent randomAdvertisementContent = contents.get(random.nextInt(contents.size()));
-                generatedAdvertisement = new GeneratedAdvertisement(randomAdvertisementContent);
-            }
+        GeneratedAdvertisement selectedContent = new EmptyGeneratedAdvertisement();
 
+        RequestContext requestContext = new RequestContext(customerId, marketplaceId);
+
+        TargetingEvaluator targetingEvaluator = new TargetingEvaluator(requestContext);
+
+        final List<AdvertisementContent> ads = contentDao.get(marketplaceId);
+
+        TreeMap<Double, AdvertisementContent> contentMap = new TreeMap<>();
+
+        if (marketplaceId == null || marketplaceId.equals("")) {
+            return selectedContent;
         }
 
-        return generatedAdvertisement;
+        ads.stream()
+                .forEach(advertisementContent -> {
+                    targetingGroupDao.get(advertisementContent.getContentId()).stream()
+                            .forEach(targetingGroup -> {
+                                TargetingPredicateResult result = targetingEvaluator.evaluate(targetingGroup);
+                                if(result.isTrue()) {
+                                    contentMap.put(targetingGroup.getClickThroughRate(), advertisementContent);
+                                }
+                            });
+                });
+
+
+        if (contentMap.size() > 0) {
+            AdvertisementContent selectedAd = contentMap.get(contentMap.lastKey());
+            selectedContent = new GeneratedAdvertisement(selectedAd);
+        }
+
+        return selectedContent;
+
+
+
     }
 }

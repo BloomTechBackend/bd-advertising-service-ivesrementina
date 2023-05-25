@@ -14,6 +14,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 /**
@@ -51,14 +53,20 @@ public class AddTargetingGroupActivity {
             requestedTargetingPredicates,
             contentId));
 
-        List<TargetingPredicate> targetingPredicates = new ArrayList<>();
-        if (requestedTargetingPredicates != null) {
-            for (com.amazon.ata.advertising.service.model.TargetingPredicate targetingPredicate :
-                requestedTargetingPredicates) {
-                TargetingPredicate predicate = TargetingPredicateTranslator.fromCoral(targetingPredicate);
-                targetingPredicates.add(predicate);
-            }
-        }
+        List<TargetingPredicate> targetingPredicates = Optional.ofNullable(requestedTargetingPredicates)
+                .map(predicates -> predicates.stream()
+                        .map(TargetingPredicateTranslator::fromCoral)
+                        .collect(Collectors.toList()))
+                .orElse(new ArrayList<>());
+
+//        List<TargetingPredicate> targetingPredicates = new ArrayList<>();
+//        if (requestedTargetingPredicates != null) {
+//            for (com.amazon.ata.advertising.service.model.TargetingPredicate targetingPredicate :
+//                requestedTargetingPredicates) {
+//                TargetingPredicate predicate = TargetingPredicateTranslator.fromCoral(targetingPredicate);
+//                targetingPredicates.add(predicate);
+//            }
+//        }
 
         TargetingGroup targetingGroup = targetingGroupDao.create(contentId, targetingPredicates);
 

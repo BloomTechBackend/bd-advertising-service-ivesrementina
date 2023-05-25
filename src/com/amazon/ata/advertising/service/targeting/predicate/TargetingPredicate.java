@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public abstract class TargetingPredicate {
 
     protected boolean inverse;
+    private RequestContext requestContext;
 
     /**
      * Creates a TargetingPredicate that can be inverted.
@@ -72,5 +73,12 @@ public abstract class TargetingPredicate {
 
     public boolean isInverse() {
         return inverse;
+    }
+    public void setRequestContext(RequestContext requestContext) {
+        this.requestContext = requestContext;
+    }
+//    @Override
+    public TargetingPredicateResult call() {
+        return evaluate(requestContext);
     }
 }
