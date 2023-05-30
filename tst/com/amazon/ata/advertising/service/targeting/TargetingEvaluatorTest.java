@@ -53,7 +53,6 @@ public class TargetingEvaluatorTest {
         TargetingPredicateResult result = targetingEvaluator.evaluate(targetingGroup);
         assertEquals(TargetingPredicateResult.TRUE, result);
     }
-
     @Test
     public void evaluateFalsePredicate() {
         when(predicate1.evaluate(requestContext)).thenReturn(TargetingPredicateResult.FALSE);

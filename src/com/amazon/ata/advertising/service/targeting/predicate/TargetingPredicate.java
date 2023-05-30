@@ -74,11 +74,5 @@ public abstract class TargetingPredicate {
     public boolean isInverse() {
         return inverse;
     }
-    public void setRequestContext(RequestContext requestContext) {
-        this.requestContext = requestContext;
-    }
-//    @Override
-    public TargetingPredicateResult call() {
-        return evaluate(requestContext);
-    }
+
 }
