@@ -5,6 +5,8 @@ import com.amazon.ata.advertising.service.model.RequestContext;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.util.concurrent.Callable;
+
 /**
  * Base class for all TargetingPredicates. The evaluate method will call either a recognized or unrecognized evaluate
  * method based on whether not the customerId is available in the context. All classes extending TargetingPredicate must
@@ -13,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
-public abstract class TargetingPredicate {
+public abstract class TargetingPredicate implements Callable<TargetingPredicateResult> {
 
     protected boolean inverse;
     private RequestContext requestContext;
@@ -75,4 +77,16 @@ public abstract class TargetingPredicate {
         return inverse;
     }
 
+    public void setRequestContext(RequestContext requestContext) {
+        this.requestContext = requestContext;
+    }
+
+//    public RequestContext getRequestContext() {
+//        return this.requestContext;
+//    }
+
+    @Override
+    public TargetingPredicateResult call() {
+        return evaluate(requestContext);
+    }
 }
